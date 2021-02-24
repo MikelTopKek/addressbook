@@ -8,7 +8,6 @@
             <input type="text" class="form-control col-3 mx-2" placeholder="Address" v-model="person.address">
             <input type="text" class="form-control col-3 mx-2" placeholder="Telephone" v-model="person.telephone">
             <button class="btn btn-success">Submit changes or add a new person</button>
-            <input type="text" class="form-control col-3 mx-2" placeholder="FilterName">
         </div>
     </form>
 
