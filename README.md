@@ -16,8 +16,9 @@ that you want to change and press Enter(or click on button)
 
 ### Install 
 ```bash
-. ./.venv/bin/activate
+. ./.venv/Scripts/activate
 pip install -r requirements.txt
+npm i
 npm run serve
 python backend/manage.py runserver
 ```
