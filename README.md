@@ -22,7 +22,7 @@ URL should be started from http
 
 ### Install 
 ```bash
-. ./.venv/Scripts/activate
+. .\.venv\Scripts\activate
 pip install -r requirements.txt
 npm i
 cd ./frontend
