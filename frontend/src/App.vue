@@ -1,5 +1,13 @@
 <template>
   <div id="app">
+    <div class="form-group row">
+        <b>Apply filters</b>
+        <input type="text" class="form-control col-3 mx-2" placeholder="Name" v-model="filters.name">
+        <input type="text" class="form-control col-3 mx-2" placeholder="Surname" v-model="filters.surname">
+        <input type="text" class="form-control col-3 mx-2" placeholder="Telephone" v-model="filters.telephone">
+        
+        <button class="btn btn-success" @click="reload_people()">Apply</button>
+    </div>
 
     <form @submit.prevent="submit_form" @submit="checkForm" action="/something" method="post">
 
@@ -8,13 +16,19 @@
             <ul>
                 <li v-for="error in errors" :key="error">{{ error }}</li>
             </ul>
-    </p>
+        </p>
         <div class="form-group row">
             <input type="text" class="form-control col-3 mx-2" placeholder="Name" v-model="person.name">
             <input type="text" class="form-control col-3 mx-2" placeholder="Surname" v-model="person.surname">
-            <input type="text" class="form-control col-3 mx-2" placeholder="Address" v-model="person.address">
+
+            <input type="text" class="form-control col-3 mx-2" placeholder="Street" v-model="person.address.street">
+            <input type="text" class="form-control col-3 mx-2" placeholder="City" v-model="person.address.city">
+            <input type="text" class="form-control col-3 mx-2" placeholder="Country" v-model="person.address.country">
+            
             <input type="text" class="form-control col-3 mx-2" placeholder="Telephone" v-model="person.telephone">
             <input type="text" class="form-control col-3 mx-2" placeholder="URL" v-model="person.url">
+            <input type="file" ref="file" v-on:change="handleFileUpload()" accept="image/*"/>
+
             <button class="btn btn-success">Submit changes or add a new person</button>
         </div>
     </form>
@@ -26,17 +40,31 @@
             <th>Address</th>
             <th>Telephone</th>
             <th>URL</th>
+            <th> Image </th>
+            <th> Actions </th>
+            
         </thead>
         <tbody>
-            <tr v-for="person in people" :key="person.id" @dblclick="$data.person = person">
+            <tr v-for="person in people" :key="person.id">
                 <td>{{  person.name  }}</td>
                 <td>{{  person.surname  }}</td>
-                <td>{{  person.address  }}</td>
+
+                <td v-if="person.address"> 
+                    <p>City: {{  person.address.city  }}</p>
+                    <p>Street: {{  person.address.street  }}</p>
+                    <p>Country: {{  person.address.country  }}</p>
+                </td>
+                <td v-else>No address was chosen!</td>
+
                 <td>{{  person.telephone  }}</td>
-                <td>{{  person.url  }}</td>
+                <td> {{person.url}}</td>
+                <td> <img :src="person.image" alt=""></td>
+                
                 <td>
+                    <button class="btn btn-outline-primary btn-sm mx-1"
+                    @click="$data.person = person">Edit</button>
                     <button class="btn btn-outline-danger btn-sm mx-1"
-                    @click="delete_person(person)">x</button>
+                    @click.stop="delete_person(person)">Delete</button>
                 </td>
             </tr>
         </tbody>
@@ -51,8 +79,24 @@ export default {
   name: 'App',
   data(){
     return{
+        filters: {
+            name: "",
+            surname: "",
+            telephone: ""
+        },
         errors:[],
-        person: {},
+        person: {
+            name: null,
+            surname: null,
+            address: {
+                city: null,
+                street: null,
+                country: null
+            },
+            telephone: null,
+            url: null,
+            image: null
+        },
         people: []
     }
   },
@@ -62,86 +106,110 @@ export default {
   },
 
   methods: {
+    handleFileUpload(){
+        console.log(this.$refs.file.files)
+        this.person.image = this.$refs.file.files[0];
+    },
 
     checkForm: function (e) {
-        if (this.name && this.surname && this.address && this.telephone && this.url) {
+        if (this.person.name && this.person.surname) {
             return true;
         }
 
         this.errors = [];
 
-        if (!this.name) {
+        if (!this.person.name) {
             this.errors.push('123.');
         }
-        if (!this.surname) {
+        if (!this.person.surname) {
             this.errors.push('456.');
-        }
-        if (!this.address) {
-            this.errors.push('666.');
-        }
-        if (!this.telephone) {
-            this.errors.push('55.');
-        }
-        if (!this.url) {
-            this.errors.push('553.');
         }
 
         e.preventDefault();
     },
 
+    reload_people(){
+        this.get_filtered_people();
+    },
+
     submit_form(){
         if (this.person.id === undefined){
-        this.create_person();
+            this.create_person();
         } else{
             this.edit_person();
         }
     },
+    async get_filtered_people(){
+        let strFilters = '';
+        for (let key in this.filters) {
+            strFilters += `${key}=${this.filters[key]}&`
+        }
+        strFilters = strFilters.slice(0, -1);
+
+        var response = await fetch(`http://127.0.0.1:8000/api/people/?${strFilters}`);
+        this.people = await response.json();
+    },
     async get_people(){
         var response = await fetch('http://127.0.0.1:8000/api/people/');
-
         this.people = await response.json();
+    },
 
-
+    get_form_data(){
+        let jsonKeys = ['address'];
+        let formData = new FormData();
+        for ( var key in this.person ) {
+            if (this.person[key]){
+                if (this.person[key] instanceof File) {
+                    formData.append(key, this.person[key]);
+                } else if (jsonKeys.includes(key)) {
+                    formData.append(key, JSON.stringify(this.person[key]));
+                } else {
+                    formData.append(key, this.person[key]);
+                }
+            }
+        }
+        return formData
+    },
+    clear_person(){
+        this.person = {
+            name: null,
+            surname: null,
+            address: {
+                city: null,
+                street: null,
+                country: null
+            },
+            telephone: null,
+            url: null,
+            image: null
+        };
     },
     async create_person(){
-        await this.get_people();
-
         await fetch('http://127.0.0.1:8000/api/people/', {
             method: 'post',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(this.person)
+            body: this.get_form_data()
         });
         await this.get_people();
+        this.clear_person();
     },
 
     async edit_person(){
-        await this.get_people();
-
+        if (!(this.person.image instanceof File)) {
+            this.person.image = null;
+        }
         await fetch(`http://127.0.0.1:8000/api/people/${this.person.id}/`, {
             method: 'put',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(this.person)
+            body: this.get_form_data()
         });
         await this.get_people();
-        this.person = {};
+        this.clear_person();
     },
 
     async delete_person(person){
-        await this.get_people();
-
         await fetch(`http://127.0.0.1:8000/api/people/${person.id}/`, {
-            method: 'delete',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(this.person)
+            method: 'delete'
         });
         await this.get_people();
-        this.person = {};
     }
   }
 }

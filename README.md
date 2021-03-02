@@ -10,16 +10,28 @@ Features:
 - Add person
 - Delete person
 - Change person
+- Filter by name, surname and telephone
 
-To change person double click on field of person, 
-that you want to change and press Enter(or click on button)
+All people require name, surname and telephone
+
+To change person click on button "Edit"
+
+To delete person click on button "Delete"
+
+URL should be started from http
 
 ### Install 
 ```bash
 . ./.venv/Scripts/activate
 pip install -r requirements.txt
 npm i
+cd ./frontend
 npm run serve
 python backend/manage.py runserver
 ```
 link:http://localhost:8080/
+
+To run tests go to ./backend and run
+```bash
+python manage.py test
+```
