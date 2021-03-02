@@ -24,8 +24,9 @@ URL should be started from http
 ```bash
 . .\.venv\Scripts\activate
 pip install -r requirements.txt
-npm i
+python backend/manage.py migrate
 cd ./frontend
+npm i
 npm run serve
 python backend/manage.py runserver
 ```
